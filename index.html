@@ -27,7 +27,10 @@ svg{display:block}
 /* book area */
 /* overflow and touch-action are set dynamically by setZoom() — these are the zoom=1 defaults */
 .scroll{position:absolute;inset:0;overflow:hidden;display:flex;user-select:none;-webkit-user-select:none}
-.host{flex-shrink:0;margin:auto;padding:56px 12px 80px;touch-action:none}
+.host{flex-shrink:0;margin:auto;padding:56px 12px 80px;touch-action:none;transition:padding .2s ease}
+body.is-fullscreen .host{padding:20px 8px 60px}
+body.is-fullscreen .hdr{opacity:0;pointer-events:none;transition:opacity .25s ease}
+body.is-fullscreen:hover .hdr{opacity:1;pointer-events:auto}
 .stf__parent{-webkit-tap-highlight-color:transparent;user-select:none}
 .stf__wrapper{position:relative !important;width:100% !important;height:100% !important;padding-bottom:0 !important}
 .stf__block{top:0;left:0}
@@ -351,6 +354,12 @@ svg{display:block}
   app.appendChild(overlay);
   app.appendChild(toolbar);
 
+  // Double click outside the book page content toggles fullscreen
+  scroll.addEventListener('dblclick', function (e) {
+    if (e.target.closest && e.target.closest('.page-item')) return;
+    toggleFullscreen();
+  });
+
   function showError(message) {
     overlay.className = 'overlay err';
     overlay.innerHTML = '';
@@ -387,10 +396,26 @@ svg{display:block}
   var btnView = iconButton('book', 'How many pages to show', function () { toggleMenu(); });
   var menuWrap = el('div', 'menuwrap');
   menuWrap.appendChild(btnView);
-  var btnFull = iconButton('full', 'Full screen', function () {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function () {});
-    else document.exitFullscreen().catch(function () {});
-  });
+  function isFullscreen() {
+    return Boolean(
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+    );
+  }
+  function toggleFullscreen() {
+    var doc = document;
+    var el = doc.documentElement;
+    if (!isFullscreen()) {
+      var rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+      if (rfs) rfs.call(el).catch(function () {});
+    } else {
+      var efs = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+      if (efs) efs.call(doc).catch(function () {});
+    }
+  }
+  var btnFull = iconButton('full', 'Full screen', toggleFullscreen);
 
   [btnThumbs, divider(), btnPrev, labelBtn, jumpForm, btnNext, divider(), btnZoomOut, zoomText, btnZoomIn, btnReset, divider(), menuWrap]
     .forEach(function (n) { bar.appendChild(n); });
@@ -398,9 +423,22 @@ svg{display:block}
     bar.appendChild(divider());
     bar.appendChild(btnFull);
   }
-  document.addEventListener('fullscreenchange', function () {
-    btnFull.innerHTML = icon(document.fullscreenElement ? 'unfull' : 'full');
-    btnFull.title = document.fullscreenElement ? 'Leave full screen (Esc)' : 'Full screen';
+  function onFSChange() {
+    var fs = isFullscreen();
+    btnFull.innerHTML = icon(fs ? 'unfull' : 'full');
+    btnFull.title = fs ? 'Leave full screen (Esc)' : 'Full screen';
+    if (document.body) {
+      if (fs) document.body.classList.add('is-fullscreen');
+      else document.body.classList.remove('is-fullscreen');
+    }
+    // Instantly trigger re-layout and re-center on fullscreen toggle
+    requestAnimationFrame(function () {
+      if (book) book.refresh();
+      setTimeout(function () { if (book) book.refresh(); }, 150);
+    });
+  }
+  ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(function (evt) {
+    document.addEventListener(evt, onFSChange);
   });
 
   function pageLabelText() {
@@ -789,9 +827,9 @@ svg{display:block}
           // page-flip picks one vs two pages from minWidth. We decide ourselves,
           // so in one-page mode minWidth is huge and its side effect is undone below.
           minWidth: twoPages ? 100 : 5000,
-          maxWidth: 1600,
+          maxWidth: 4000,
           minHeight: 200,
-          maxHeight: 2600,
+          maxHeight: 4000,
           maxShadowOpacity: 0.5,
           showCover: coverAlone,
           mobileScrollSupport: false,
