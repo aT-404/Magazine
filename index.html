@@ -32,8 +32,18 @@ body.is-fullscreen .host{padding:20px 8px 60px}
 body.is-fullscreen .hdr{opacity:0;pointer-events:none;transition:opacity .25s ease}
 body.is-fullscreen:hover .hdr{opacity:1;pointer-events:auto}
 @media (max-width: 768px) and (orientation: portrait) {
-  .host{padding:48px 4px 70px !important}
-  body.is-fullscreen .host{padding:12px 4px 50px !important}
+  .host{padding:48px 4px 60px !important}
+  body.is-fullscreen .host{padding:8px 4px 44px !important}
+}
+/* Mobile horizontal (landscape): hide header, minimal padding, auto-hide toolbar */
+@media (max-height: 550px) and (orientation: landscape) {
+  .hdr { display: none !important; }
+  .host { padding: 2px 4px 4px !important; width: 100% !important; height: 100% !important; }
+  body.is-fullscreen .host { padding: 0 !important; }
+  .toolbar { bottom: 4px !important; }
+  .bar { padding: 2px 6px !important; gap: 2px !important; transform: scale(0.9); }
+  .ib { padding: 4px 5px !important; }
+  .lbl { min-width: 50px !important; padding: 2px 4px !important; font-size: 10px !important; }
 }
 /* Rotate phone suggestion pill */
 .rotate-hint {
@@ -727,8 +737,11 @@ body.is-fullscreen:hover .hdr{opacity:1;pointer-events:auto}
     function wantedWidth() {
       var dpr = Math.min(window.devicePixelRatio || 1, 2);
       var columns = twoPages ? 2 : 1;
-      var availableWidth = Math.max(200, host.clientWidth - 24);
-      var availableHeight = Math.max(200, host.clientHeight - 136);
+      var isMobileLandscape = window.innerHeight < 550 && window.innerWidth > window.innerHeight;
+      var padV = isMobileLandscape ? 44 : 136;
+      var padH = isMobileLandscape ? 8 : 24;
+      var availableWidth = Math.max(200, host.clientWidth - padH);
+      var availableHeight = Math.max(200, host.clientHeight - padV);
       var cssWidth = Math.min(availableWidth / columns, availableHeight / ratio);
       return Math.round(Math.min(1800, Math.max(600, cssWidth * dpr)));
     }
@@ -872,16 +885,17 @@ body.is-fullscreen:hover .hdr{opacity:1;pointer-events:auto}
         }
 
         var startIndex = toFirstVisible(Math.min(Math.max(0, currentIndex), total - 1));
-        var baseWidth = 500;
+        var isMobileLandscape = window.innerHeight < 550 && window.innerWidth > window.innerHeight;
+        var baseWidth = isMobileLandscape ? 350 : 500;
         pageFlip = new St.PageFlip(bookEl, {
           width: baseWidth,
           height: Math.round(baseWidth * ratio),
           size: 'stretch',
           // page-flip picks one vs two pages from minWidth. We decide ourselves,
           // so in one-page mode minWidth is huge and its side effect is undone below.
-          minWidth: twoPages ? 100 : 5000,
+          minWidth: twoPages ? 20 : 5000,
           maxWidth: 4000,
-          minHeight: 200,
+          minHeight: 50,
           maxHeight: 4000,
           maxShadowOpacity: 0.5,
           showCover: coverAlone,
