@@ -389,11 +389,18 @@ body.is-fullscreen:hover .hdr{opacity:1;pointer-events:auto}
   var bar = el('div', 'bar');
   toolbar.appendChild(bar);
 
+  var rotateHintEl = el('div', 'rotate-hint', icon('rotate') + '<span>Rotate phone for 2-page view</span><span class="hint-close">&times;</span>');
+  rotateHintEl.addEventListener('click', function () {
+    hintDismissed = true;
+    rotateHintEl.classList.remove('show');
+  });
+
   app.appendChild(scroll);
   app.appendChild(header);
   app.appendChild(overlay);
   app.appendChild(toolbar);
   app.appendChild(rotateHintEl);
+
 
   // Double click outside the book page content toggles fullscreen
   scroll.addEventListener('dblclick', function (e) {
@@ -989,11 +996,6 @@ body.is-fullscreen:hover .hdr{opacity:1;pointer-events:auto}
   }
 
   var hintDismissed = false;
-  var rotateHintEl = el('div', 'rotate-hint', icon('rotate') + '<span>Rotate phone for 2-page view</span><span class="hint-close">&times;</span>');
-  rotateHintEl.addEventListener('click', function () {
-    hintDismissed = true;
-    rotateHintEl.classList.remove('show');
-  });
 
   function updateOrientationMode() {
     var isVert = shouldShowSinglePage();
